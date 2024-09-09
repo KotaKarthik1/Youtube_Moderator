@@ -4,8 +4,7 @@ require("dotenv").config();
 const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
-const authRoutes = require('./authentication/auth');
-const youtuberoutes=require('./routes/YoutubeUpload');
+const authRoutes= require('./routes/auth.route');
 require("./authentication/auth"); // Import the Google strategy
 
 const app = express();
@@ -42,7 +41,5 @@ app.use(passport.session());
 
 // Auth Routes
 app.use(authRoutes);
-//Youtube route
-app.use(youtuberoutes);
 
 module.exports=app;

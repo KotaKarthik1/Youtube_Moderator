@@ -2,11 +2,11 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 require("dotenv").config();
 const { google } = require("googleapis");
-const User=require('../Models/UsersModel');
+const User = require("../Models/UsersModel");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const { signToken } = require("../helpers/jwt.helper");
 // Auth routes
 const express = require("express");
 const router = express.Router();
@@ -113,25 +113,24 @@ router.post("/loginEditor", async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.jwtSecretKey,
-      { expiresIn: "1d" }
-    );
-    res.cookie('token', token, {
-      httpOnly: true,  // Prevents JavaScript from accessing the cookie
-      secure: process.env.NODE_ENV === 'production',  // Use secure cookies in production
-      sameSite: 'lax',  // Protects against CSRF
-      maxAge: 24 * 60 * 60 * 1000  // 1 day expiry
+    const generatedToken = await signToken({
+      id: user._id,
+      email: user.email,
+      name: user.name,
     });
-     // Send success status to frontend
-     res.status(200).json({ message: 'Login successful', id: user._id });
+    console.log("genetated token: ",generatedToken);
+    res.cookie("token", generatedToken, {
+      httpOnly: true, // Prevents JavaScript from accessing the cookie
+      secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+      sameSite: "lax", // Protects against CSRF
+      maxAge: 24 * 60 * 60 * 1000, // 1 day expiry
+    });
+    // Send success status to frontend
+    res.status(200).json({ message: "Login successful", id: user._id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 router.post("/EditorRegister", async (req, res) => {
   const { name, email, password } = req.body;
@@ -139,7 +138,7 @@ router.post("/EditorRegister", async (req, res) => {
     // Check if the email is already registered
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email is already registered' });
+      return res.status(400).json({ message: "Email is already registered" });
     }
     // Hash the password
     const salt = await bcrypt.genSalt(10);
@@ -148,18 +147,24 @@ router.post("/EditorRegister", async (req, res) => {
     const newEditor = new User({
       name,
       email,
-      password: hashedPassword,  // Store the hashed password
+      password: hashedPassword, // Store the hashed password
       // jwtSecretKey:jwtSecretKey,
-      role: 'editor',  // Set the role to 'editor'
+      role: "editor", // Set the role to 'editor'
     });
 
     // Save the editor to the database
     await newEditor.save();
 
-    res.status(201).json({ message: 'Editor registered successfully', editorId: newEditor._id });
+    res
+      .status(201)
+      .json({
+        message: "Editor registered successfully",
+        editorId: newEditor._id,
+      });
   } catch (error) {
-    console.error('Error registering editor:', error);
-    res.status(500).json({ message: 'Server error during registration' });
+    console.error("Error registering editor:", error);
+    res.status(500).json({ message: "Server error during registration" });
   }
 });
+
 module.exports = router;
