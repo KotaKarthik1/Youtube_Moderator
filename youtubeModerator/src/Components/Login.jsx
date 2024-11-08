@@ -1,143 +1,146 @@
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { Link, useNavigate } from 'react-router-dom'; // Corrected import for navigate
-
-// function Login() {
-//   const [user, setUser] = useState(null);
-//   const navigate = useNavigate(); // Initialize navigate for programmatic navigation
-//   const [textsample,setTextsample]=useState("hey bro tap!");
-//   useEffect(() => {
-//     // Check if the user is authenticated when the component mounts
-//     axios
-//       .get('http://localhost:3000/auth/user', { withCredentials: true })
-//       .then((response) => {
-//         setUser(response.data);
-//         console.log(response.data);
-//       })
-//       .catch(() => {
-//         setUser(null);
-//       });
-//   }, []);
-
-//   const handleLogin = () => {
-//     // Redirect to the backend to initiate Google login
-//     window.open('http://localhost:3000/auth/google', '_self');
-//   };
-//   const handletestupload=()=>{
-//     const response=axios.get('http://localhost:3000/uploadtest',{withCredentials:true})
-//     .then((response)=>{
-//       setTextsample(response.data);
-//       console.log(response);
-//     })
-//     // setTextsample(response.data.text);
-    
-//   }
-//   const handleLogout = () => {
-//     // Logout from backend
-//     axios
-//       .get('http://localhost:3000/auth/logout', { withCredentials: true })
-//       .then(() => {
-//         setUser(null);
-//         console.log('setted null');
-//         navigate('/'); // Navigate to login or homepage after logout
-//       });
-//       console.log('in the function');
-//   };
-
-//   return (
-//     <div>
-//       {user ? (
-//         <>
-//         <div>
-//           <h2>Welcome, {user.displayName}</h2>
-//           <img src={user.photos[0].value} alt="User profile" />
-    
-//           <button onClick={handleLogout}>Logout</button>
-//         </div>
-//         <div> 
-//             <Link to='/testupload' ><button >Upload video</button></Link>
-//             <button onClick={handletestupload} >{textsample}</button>
-//         </div>
-//         </>
-//       ) : (
-//         <button onClick={handleLogin}>Login with Google</button>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default Login;
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
 function Login() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+  const [userEditor, setUserEditor] = useState(JSON.parse(localStorage.getItem('userEditor')) || null);
   const [loginOption, setLoginOption] = useState(''); // To keep track of selected login option (organizer or editor)
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [textsample, setTextsample] = useState('hey bro tap!');
-  
+  const [EditorText, setEditorText] = useState('Tap for Authentication');
+  const [OrganizerText, setOrganizerText] = useState('Tap for Authentication');
+
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if the user or editor is already logged in on component mount
+    checkUserState();
+  }, []);
+
+  const checkUserState = () => {
     axios
       .get('http://localhost:3000/auth/user', { withCredentials: true })
       .then((response) => {
-        setUser(response.data);
-        console.log(response.data);
+        // console.log(response.data.user?.role);
+        console.log("role is ",response.data.user?.role);
+
+        if(response.data.user?.role != undefined)
+        {
+          setUserEditor(response.data.user);
+          localStorage.setItem('userEditor', JSON.stringify(response.data)); // Store user data in localStorage
+        }
+        else{
+          console.log(" logged in org");
+          localStorage.setItem('user', JSON.stringify(response.data)); // Store user data in localStorage
+          setUser(response.data);
+        }
       })
       .catch(() => {
         setUser(null);
+        setUserEditor(null);
+        localStorage.removeItem('userEditor'); // Clear localStorage on error
+        localStorage.removeItem('user'); // Clear localStorage on error
       });
-  }, []);
+  };
 
   const handleLogin = () => {
     window.open('http://localhost:3000/auth/google', '_self');
+    checkUserState();
   };
 
-  const handletestupload = () => {
-    axios.get('http://localhost:3000/uploadtest', { withCredentials: true })
+  const handleAuthenticationEditor = () => {
+    axios.get('http://localhost:3000/testEditorAuthentication', { withCredentials: true })
       .then((response) => {
-        setTextsample(response.data);
-        console.log(response);
+        setEditorText(response.data);
+      })
+      .catch(() => {
+        console.log("error authentication");
       });
-  };
+  }
+
+  const handleAuthenticationOrganizer = () => {
+    axios.get('http://localhost:3000/testOrganizerAuthentication', { withCredentials: true })
+      .then((response) => {
+        setOrganizerText(response.data);
+      })
+      .catch(() => {
+        console.log("error authentication");
+      });
+  }
 
   const handleLogout = () => {
     axios
       .get('http://localhost:3000/auth/logout', { withCredentials: true })
       .then(() => {
         setUser(null);
-        navigate('/'); // Navigate to login or homepage after logout
+        localStorage.removeItem('user'); // Clear localStorage on logout
+        navigate('/');
       });
   };
 
   const handleEditorLogin = () => {
-    // Handle login with username and password for editor
-    axios.post('http://localhost:3000/auth/editor-login', { username, password })
+    axios.post('http://localhost:3000/EditorLogin',
+      { email, password },
+      { withCredentials: true } // Ensure credentials are sent
+    )
       .then((response) => {
-        setUser(response.data);
-        navigate('/'); // Redirect after successful login
+        setUserEditor(response.data);
+        localStorage.setItem('userEditor', JSON.stringify(response.data)); // Store editor data in localStorage
+        checkUserState();
+        navigate('/');
       })
       .catch(() => {
         alert('Invalid login credentials');
       });
   };
 
+  const handleLogoutEditor = () => {
+    axios.get('http://localhost:3000/EditorLogout', { withCredentials: true })
+      .then(() => {
+        setUserEditor(null);
+        localStorage.removeItem('userEditor'); // Clear localStorage on editor logout
+        navigate('/');
+        setEmail('');
+        setPassword('');
+      })
+      .catch(() => {
+        alert('Logout not successful');
+      });
+  };
+
+  useEffect(()=>{
+
+    
+  },[user,userEditor])
   return (
     <div>
-      {user ? (
+      {user || userEditor ? (
         <>
-          <div>
-            <h2>Welcome, {user.displayName}</h2>
-            <img src={user.photos[0].value} alt="User profile" />
-            <button onClick={handleLogout}>Logout</button>
-          </div>
-          <div> 
-            <Link to='/testupload'><button>Upload video</button></Link>
-            <button onClick={handletestupload}>{textsample}</button>
-          </div>
+          {user &&
+            <>
+              <div>
+                <h2>Welcome, {user?.displayName}</h2>
+                <img src={user?.photos[0]?.value} alt="User profile" />
+                <button onClick={handleLogout}>Logout organizer</button>
+              </div>
+              <div>
+                <Link to='/testupload'><button>Upload video</button></Link>
+                <button onClick={handleAuthenticationOrganizer}>{OrganizerText}</button>
+              </div>
+            </>
+          }
+          {userEditor &&
+            <>
+              <div>
+                <h2>Welcome, {userEditor?.name}</h2>
+                <button onClick={handleLogoutEditor}>Logout editor</button>
+              </div>
+              <div>
+                <button onClick={handleAuthenticationEditor}>{EditorText}</button>
+              </div>
+            </>
+          }
         </>
       ) : (
         <>
@@ -146,27 +149,25 @@ function Login() {
             <button onClick={() => setLoginOption('organizer')}>Login as Organizer</button>
             <button onClick={() => setLoginOption('editor')}>Login as Editor</button>
           </div>
-          
-          {/* Conditionally show Google login button for Organizer */}
+
           {loginOption === 'organizer' && (
             <div>
               <button onClick={handleLogin}>Login with Google</button>
             </div>
           )}
 
-          {/* Conditionally show Username/Password form for Editor */}
           {loginOption === 'editor' && (
             <div>
               <h3>Editor Login</h3>
-              <input 
-                type="text" 
-                placeholder="Username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+              <input
+                type="text"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
-              <input 
-                type="password" 
-                placeholder="Password" 
+              <input
+                type="password"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

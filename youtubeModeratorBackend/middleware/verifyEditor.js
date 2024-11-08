@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { verifyToken } = require("../helpers/jwt.helper");
 const User= require('../Models/UsersModel');
-const getSkillCircleSignature =  require('../helpers/cookie.helper');
+const getTokenfromCookie =  require('../helpers/cookie.helper');
 // Middleware to verify the JWT token from cookies
 const verifyEditor = async (req, res, next) => {
+  console.log(" verifying editor");
   console.log(req.headers.cookie);
-  const token = getSkillCircleSignature(req.headers.cookie); // Fetch token from cookies
+  const token = getTokenfromCookie(req.headers.cookie); // Fetch token from cookies
   console.log(token);
 
   if (!token) {

@@ -15,13 +15,6 @@ const userSchema = new Schema({
   organizerId: { type: Schema.Types.ObjectId, ref: "User" }, // For editors, after acceptance
   editorIds: [{ type: Schema.Types.ObjectId, ref: "User" }], // Only for organizers
   youtubeChannelId: { type: String }, // Only for organizers
-  // jwtSecretKey: {
-  //   type: String,
-  //   required: true,
-  //   default: () => crypto.randomBytes(32).toString("hex"),
-  //   unique: true,
-  // }, // Ensure the secret key is generated
-
   // For editors
   organizerRequestStatus: {
     status: {
@@ -31,7 +24,6 @@ const userSchema = new Schema({
     },
     organizerId: { type: Schema.Types.ObjectId, ref: "User" }, // Organizer to whom the request is sent
   },
-
   // For organizers, managing incoming requests
   pendingEditors: [
     {

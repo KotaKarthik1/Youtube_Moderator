@@ -37,7 +37,7 @@ passport.deserializeUser((user, done) => {
 });
 
 router.get("/auth/logout", verifyOrganizer, authController.handleLogout);
-router.get("/auth/user", authController.AuthenticateGoogle);
+router.get("/auth/user",authController.AuthenticateUser);
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", {
@@ -56,9 +56,11 @@ router.get(
   })
 );
 
+router.get('/testOrganizerAuthentication',verifyOrganizer,authController.handleTextChange);
 
 //editor routes auth
 router.post('/EditorLogin',authControllerEditor.HandleEditorLogin);
 router.post('/EditorRegister',authControllerEditor.HandleEditorRegister);
 router.get('/EditorLogout',verifyEditor,authControllerEditor.HandleEditorLogout);
+router.get('/testEditorAuthentication',verifyEditor,authControllerEditor.handleTextChange);
 module.exports = router;

@@ -9,7 +9,7 @@ const HttpStatusCode = require("../constants/http-code.constant");
 const ResponseMessageConstant = require("../constants/response-message.constant");
 const CommonConstant = require("../constants/common.constant");
 const ErrorLogConstant = require("../constants/error-log.constant");
-const getSkillCircleSignature = require('../helpers/cookie.helper');
+const getTokenfromCookie = require('../helpers/cookie.helper');
 //editor API'S
 exports.HandleEditorLogin = async (req, res) => {
     try {
@@ -30,8 +30,10 @@ exports.HandleEditorLogin = async (req, res) => {
         sameSite: "lax", // Protects against CSRF
         maxAge: 24 * 60 * 60 * 1000, // 1 day expiry
       });
+      console.log("cookie attched");
       // Send success status to frontend
-      res.status(200).json({ message: "Login successful", id: user._id });
+      res.status(200).json({ message: "Login successful", id: user._id,username:user.name
+       });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -75,7 +77,7 @@ exports.HandleEditorLogin = async (req, res) => {
 exports.HandleEditorLogout = async(req,res)=>
 {
   try{
-    const token = getSkillCircleSignature(req.headers.cookie);
+    const token = getTokenfromCookie(req.headers.cookie);
     await jwtToken.findOneAndDelete({
       jwtTokenId: token,
     });
@@ -101,3 +103,6 @@ exports.HandleEditorLogout = async(req,res)=>
     });
   }
 }
+exports.handleTextChange = async (req, res) => {
+  res.status(200).send("Authorized user");
+};

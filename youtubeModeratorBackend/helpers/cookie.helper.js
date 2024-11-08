@@ -1,11 +1,11 @@
 const CommonConstant = require("../constants/common.constant");
-const getSkillCircleSignature = (cookies) => {
-    const skillCircleSignature = cookies
-        .split(";")
+const getTokenfromCookie = (cookies) => {
+    console.log("cookies are:",cookies);
+    const getToken = cookies?.split(";")
         .find((cookie) =>
             cookie.trim().startsWith(CommonConstant.signatureCookieName),
         );
-    return skillCircleSignature ? skillCircleSignature.split("=")[1] : null;
+    return getToken ? getToken.split("=")[1] : null;
 };
 
-module.exports = getSkillCircleSignature;
+module.exports = getTokenfromCookie;
