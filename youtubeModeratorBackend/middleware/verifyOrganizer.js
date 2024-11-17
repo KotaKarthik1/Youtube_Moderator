@@ -6,6 +6,7 @@ const verifyOrganizer = async (req, res, next) => {
       console.log("Authentication successful");
       next(); // Proceed to the next middleware or route handler
     } else {
+      console.log("authentication not successfull");
       res.sendStatus(401); // Unauthorized access if user is not logged in
     }
   };

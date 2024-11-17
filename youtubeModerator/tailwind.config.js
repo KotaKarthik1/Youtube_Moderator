@@ -5,7 +5,19 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      keyframes: {
+        bounceRight: {
+          '0%, 100%': { transform: 'translateX(0) rotate(45deg)' },
+          '50%': { transform: 'translateX(5px) rotate(45deg)' },
+        },
+      },
+      animation: {
+        arrowBounceRight: 'bounceRight 1.3s ease-in-out infinite',
+      },
+    },
   },
-  plugins: [],
+  plugins: [
+    // require('daisyui'),
+  ],
 }

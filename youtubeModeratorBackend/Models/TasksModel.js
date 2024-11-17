@@ -1,5 +1,6 @@
 const taskSchema = new Schema({
-    organizerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },  // Organizer who created the task
+    taskName:{type:String,required:true},
+    organizerId: { type: Schema.Types.ObjectId, ref: 'Org', required: true },  // Organizer who created the task
     editorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },  // Editor assigned to the task
     rawVideoUrl: { type: String, required: true },  // S3 URL for the raw video
     editedVideoUrls: [{ type: String }],  // Array of S3 URLs for edited video versions
@@ -11,6 +12,7 @@ const taskSchema = new Schema({
     },  // Task status
     messages: [
       {
+        //change ref here
         senderId: { type: Schema.Types.ObjectId, ref: 'User', required: true },  // Who sent the message (organizer or editor)
         message: { type: String, required: true },  // Message content
         timestamp: { type: Date, default: Date.now }  // Time and date of the message
@@ -20,6 +22,6 @@ const taskSchema = new Schema({
     updatedAt: { type: Date, default: Date.now }
   });
   
-  const Task = mongoose.model('Task', taskSchema);
-  module.exports = Task;
+  const TaskModel = mongoose.model('Task', taskSchema);
+  module.exports = TaskModel;
   

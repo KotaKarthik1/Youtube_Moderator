@@ -1,7 +1,11 @@
 require("dotenv").config();
+const Org = require("../Models/OrganizerModel");
 const User = require("../Models/UsersModel");
 const getTokenfromCookie = require("../helpers/cookie.helper");
 const { verifyToken } = require("../helpers/jwt.helper");
+const { google } = require('googleapis');
+// const youtubeClient= require('../config/youtube');
+// const oauth2Client = require('../config/oauth2client');
 exports.googleCallback = async (req, res) => {
   // Successful authentication
   const profile = req.user;
@@ -9,45 +13,44 @@ exports.googleCallback = async (req, res) => {
   const name = profile.displayName;
   const email = profile.emails[0].value;
   const youtubeChannelId = profile.id;
+  const profileImageUrl=profile?.photos[0]?.value;
 
   // Check if user already exists in the database
   let user = await User.findOne({ email });
-
-  if (!user) {
+  console.log("user found");
+  if(user!=null)
+  {
+    console.log("inside user");
     // Create a new user with generated jwtSecretKey
-    const newuser = new User({
+    const newuser = new Org({
       name,
       email,
       youtubeChannelId,
+      profileImageUrl,
+      youtubeChannelName:"",
       // jwtSecretKey: crypto.randomBytes(32).toString("hex"),
       role: "organizer", // Assuming only organizers log in via Google
     });
     await newuser.save();
   }
 
-  res.redirect("http://localhost:5173"); // Redirect to the frontend
+  res.redirect("http://localhost:5173/orgDashboard"); // Redirect to the frontend
 };
 
 //Auth user
 exports.AuthenticateGoogle = async (req, res) => {
   if (req.isAuthenticated()) {
-    res.json(req.user); // Send back the user info stored in the session
+    console.log(req.user);
     console.log("authenticated");
-    // console.log(req.user);
+    return res.json(req.user); // Send back the user info stored in the session
   } else {
     res.status(401).send("Unauthorized");
     console.log("not authorized");
   }
 };
 
-//Auth user
+//Auth user (only editor)
 exports.AuthenticateUser = async (req, res) => {
-  if (req.isAuthenticated()) {
-    console.log("authenticated");
-    console.log("req.user is",req.user);
-    return res.json(req.user); // Send back the user info stored in the session
-    // console.log(req.user);
-  } else {
     if (!req.headers.cookie) {
       return res.status(401).json({ error: "token not provided" });
     }
@@ -82,8 +85,6 @@ exports.AuthenticateUser = async (req, res) => {
     catch (err) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
-   
-  }
 };
 
 //logout api

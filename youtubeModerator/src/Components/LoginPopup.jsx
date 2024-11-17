@@ -1,13 +1,60 @@
-import React from "react";
+import React ,{useState}from "react";
+import authApi from "../apis/auth.api";
+import currentUser from "../store/user.store";
+import { useRecoilState } from "recoil";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+const LoginPopup = ({ isOpen, onClose, userType}) => {
+  const [email, setEmail] = useState('');
+  const navigate=useNavigate();
+  const [password, setPassword] = useState('');
+  const [currentLoggedInUser, setCurrentLoggedInUser] = useRecoilState(currentUser);
+  
+  const handleGoogleLogin = () => {
+    window.open('http://localhost:4000/auth/google', '_self');
+    // checkUserState();
+  };
 
-const LoginPopup = ({ isOpen, onClose, userType }) => {
+  
+  const handleEditorLogin = (e) => {
+
+    e.preventDefault();
+    console.log(" em rooooo")
+    authApi.handleEditorLogin({
+      payload:{
+        email,
+        password
+      },
+      success:(res)=>{
+        console.log("role is ",res.data.user?.role);
+        // checkUserState();
+        navigate('/EditorDashboard');
+      },
+      error:(err)=>{
+        if (err.response && err.response.status === 401) {
+          toast.error("Invalid credentials", {
+            position: "top-center",
+            autoClose: 2000,
+          });
+        } else {
+          toast.error("Error in server", {
+            position: "top-center",
+            autoClose: 2000,
+          });
+        }
+      }
+    })
+  };
+
+  
   if (!isOpen) return null;
 
   return (
     <div
       id="login-popup"
       tabIndex="-1"
-      className="bg-black/50 fixed top-0 right-0 left-0 z-50 h-full flex items-center justify-center"
+      className={`bg-black/50 fixed top-0 right-0 left-0 z-50 h-full flex items-center justify-center`}
     >
       <div className="relative p-4 w-full max-w-md h-full md:h-auto">
         <div className="relative bg-white rounded-lg shadow">
@@ -41,7 +88,8 @@ const LoginPopup = ({ isOpen, onClose, userType }) => {
 
             {userType=='Organizer' && (
             <div className="mt-7 flex flex-col gap-2">
-              <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded border border-slate-300 bg-white p-2 text-sm font-medium text-black">
+              <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded border border-slate-300 bg-white p-2 text-sm font-medium text-black"
+              onClick={handleGoogleLogin}>
                 <img
                   src="https://www.svgrepo.com/show/475656/google-color.svg"
                   alt="Google"
@@ -68,6 +116,8 @@ const LoginPopup = ({ isOpen, onClose, userType }) => {
                 required
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2 placeholder:text-gray-400 focus:ring-2 focus:ring-black"
                 placeholder="Email Address"
+                value={email}
+                onChange={(e)=> setEmail(e.target.value)}
               />
               <input
                 name="password"
@@ -75,6 +125,8 @@ const LoginPopup = ({ isOpen, onClose, userType }) => {
                 required
                 className="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 placeholder:text-gray-400 focus:ring-2 focus:ring-black"
                 placeholder="Password"
+                value={password}
+                onChange={(e)=> setPassword(e.target.value)}
               />
               <p className="mb-3 mt-2 text-sm text-gray-500">
                 <a
@@ -87,6 +139,7 @@ const LoginPopup = ({ isOpen, onClose, userType }) => {
               <button
                 type="submit"
                 className="inline-flex w-full items-center justify-center rounded-lg bg-black p-2 py-3 text-sm font-medium text-white focus:ring-2 focus:ring-black"
+                onClick={handleEditorLogin}
               >
                 Continue
               </button>

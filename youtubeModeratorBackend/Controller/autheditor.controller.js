@@ -10,9 +10,14 @@ const ResponseMessageConstant = require("../constants/response-message.constant"
 const CommonConstant = require("../constants/common.constant");
 const ErrorLogConstant = require("../constants/error-log.constant");
 const getTokenfromCookie = require('../helpers/cookie.helper');
+const s3Client = require('../config/awss3');
+const youtubeClient= require('../config/youtube');
 //editor API'S
+
+//editor login
 exports.HandleEditorLogin = async (req, res) => {
     try {
+      
       const { email, password } = req.body;
       const user = await User.findOne({ email });
       if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -24,7 +29,7 @@ exports.HandleEditorLogin = async (req, res) => {
         name: user.name,
       });
       console.log("genetated token: ",generatedToken);
-      res.cookie("token", generatedToken, {
+      res.cookie("EditorToken", generatedToken, {
         httpOnly: true, // Prevents JavaScript from accessing the cookie
         secure: process.env.NODE_ENV === "production", // Use secure cookies in production
         sameSite: "lax", // Protects against CSRF
@@ -39,6 +44,7 @@ exports.HandleEditorLogin = async (req, res) => {
     }
   }
   
+  // editor register
   exports.HandleEditorRegister= async (req, res) => {
     const { name, email, password } = req.body;
     console.log(name,email,password);
@@ -74,6 +80,8 @@ exports.HandleEditorLogin = async (req, res) => {
       res.status(500).json({ message: "Server error during registration" });
     }
   }
+
+  //editor logout
 exports.HandleEditorLogout = async(req,res)=>
 {
   try{
@@ -103,6 +111,9 @@ exports.HandleEditorLogout = async(req,res)=>
     });
   }
 }
+
+
 exports.handleTextChange = async (req, res) => {
   res.status(200).send("Authorized user");
 };
+

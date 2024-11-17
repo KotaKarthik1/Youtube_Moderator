@@ -1,15 +1,15 @@
 module.exports = {
-    signatureCookieName: "token",
+    signatureCookieName: "EditorToken",
     email: {
         charSet: "UTF-8",
         source: {
-            tech_team: "SkillCircle Team <bhavaniprasad0141@gmail.com>",
+            tech_team: "Youtube Moderator Team <bhavaniprasad0141@gmail.com>",
         },
         verificationEmail: {
-            subject: "SkillCircle - Email Address Verification Request",
+            subject: "Youtube Moderator - Email Address Verification Request",
         },
         resetPasswordEmail: {
-            subject: "SkillCircle - Reset Password Request",
+            subject: "Youtube Moderator - Reset Password Request",
         },
     },
 };

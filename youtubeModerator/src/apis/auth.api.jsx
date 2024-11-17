@@ -4,17 +4,35 @@ import apiPath from "../constants/api-path.constant";
 import axios from "../configs/axios-instances";
 
 const authApi = {
-  handleLogin: ({ payload, success, error }) => {
-    const {auth: { login },} = apiPath;
+  handleEditorLogin: ({ payload, success, error }) => {
+    const {auth: { editorLogin }} = apiPath;
 
-    axios.postRequest({ path: login, payload, success, error });
+    axios.postRequest({ path: editorLogin, payload, success, error });
   },
-  handleLogout: ({ success, error }) => {
-    const {
-      auth: { logout },
-    } = apiPath;
-    axios.postRequest({ path: logout, success, error });
+  handleEditorLogout: ({ payload, success, error }) => {
+    const {auth: { editorLogout }} = apiPath;
+
+    axios.getRequest({ path: editorLogout, payload, success, error });
   },
+  handleEditorRegister: ({ payload, success, error }) => {
+    const {auth: { editorRegister }} = apiPath;
+
+    axios.postRequest({ path: editorRegister, payload, success, error });
+  },
+  handleOrgLogout:({payload, success, error })=>{
+    const {auth :{orgLogout}}= apiPath;
+    axios.getRequest({path:orgLogout,payload,success,error});
+  },
+  checkOrgStatus:({payload,success,error,final})=>{
+    const {auth :{checkOrgStatus}} =apiPath;
+    axios.getRequest({path:checkOrgStatus,payload,success,error,final})
+  },
+
+  checkUserStatus:({payload,success,error,final})=>{
+    const {auth :{checkUserStatus}} =apiPath;
+    axios.getRequest({path:checkUserStatus,payload,success,error,final})
+  },
+  
   handleRegister: ({ payload, success, error }) => {
     const {
       auth: { register },

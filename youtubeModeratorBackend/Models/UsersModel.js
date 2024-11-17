@@ -6,15 +6,13 @@ const userSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String }, // Only for editors, hashed
+  description:{type:String, default:"Hey! I am a Video Editor "},
   role: {
     type: String,
-    enum: ["organizer", "editor"],
     required: true,
     defalut: "editor",
   },
-  organizerId: { type: Schema.Types.ObjectId, ref: "User" }, // For editors, after acceptance
-  editorIds: [{ type: Schema.Types.ObjectId, ref: "User" }], // Only for organizers
-  youtubeChannelId: { type: String }, // Only for organizers
+  organizerId: { type: Schema.Types.ObjectId, ref: "Org" }, // For editors, after acceptance
   // For editors
   organizerRequestStatus: {
     status: {
@@ -22,20 +20,23 @@ const userSchema = new Schema({
       enum: ["none", "pending", "approved", "rejected"],
       default: "none",
     },
-    organizerId: { type: Schema.Types.ObjectId, ref: "User" }, // Organizer to whom the request is sent
+    organizerId: { type: Schema.Types.ObjectId, ref: "Org" }, // Organizer to whom the request is sent
   },
-  // For organizers, managing incoming requests
-  pendingEditors: [
-    {
-      editorId: { type: Schema.Types.ObjectId, ref: "User" }, // Editor's ID requesting to join
-      status: {
-        type: String,
-        enum: ["pending", "approved", "rejected"],
-        default: "pending",
-      },
-    },
-  ],
+  profileImageUrl: { type: String, default: "" },
 
+  // For organizers, managing incoming requests
+  // pendingEditors: [
+  //   {
+  //     editorId: { type: Schema.Types.ObjectId, ref: "User" }, // Editor's ID requesting to join
+  //     status: {
+  //       type: String,
+  //       enum: ["pending", "approved", "rejected"],
+  //       default: "pending",
+  //     },
+  //   },
+  // ],
+
+  rating:{type:Number,default:0},
   assignedTasks: [{ type: Schema.Types.ObjectId, ref: "Task" }], // Only for editors
 
   createdAt: { type: Date, default: Date.now },

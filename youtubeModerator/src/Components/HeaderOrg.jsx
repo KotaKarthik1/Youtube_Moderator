@@ -8,7 +8,7 @@ import authApi from "../apis/auth.api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const Header = ({ isScrolled }) => {
+const HeaderOrg = ({ isScrolled }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDropdownMobile, setShowDropdownMobile] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -84,25 +84,28 @@ const Header = ({ isScrolled }) => {
   };
 
   const handleProfileNavigation = () => {
-    if (currentLoggedInUser?.role == "editor") {
-      navigate("/auth/profile/editor");
-    } else if (currentLoggedInUser?.role == "organizer") {
+    if (currentLoggedInUser?.role == "organizer") {
       navigate("/auth/profile/org");
     } else {
       navigate("/");
     }
   };
   const handleHomeNavigation = () => {
-    if (currentLoggedInUser?.role === "editor") {
-      navigate("/EditorDashboard");
-    } else if (currentLoggedInUser?.role === "organizer") {
+    if (currentLoggedInUser?.role === "organizer") {
       navigate("/OrgDashboard");
-    } else {
+    }
+    else {
       navigate("/");
     }
   };
   const handleServicesNavigation = () => {
-    navigate("/servicesNonAuth");
+    if(currentLoggedInUser?.role==='organizer')
+      {
+        navigate('/auth/features/org');
+      }
+      else{
+        navigate('/');
+      }
   };
 
   return (
@@ -180,106 +183,70 @@ const Header = ({ isScrolled }) => {
             </li>
             <li>
               <a
-                href="/contactUsNonAuth"
+                href="/auth/contact/org"
                 className="font-bold hover:text-slate-600 "
               >
                 Contact
               </a>
             </li>
             <li>
-              <a href="/FAQNonAuth" className="font-bold hover:text-slate-600 ">
+              <a href="/auth/faq/org" className="font-bold hover:text-slate-600 ">
                 FAQ
               </a>
             </li>
             <li>
-              {currentLoggedInUser?.role == "editor" && (
-                <a href="/" className="font-bold hover:text-slate-600 ">
-                  Organizers
+              {currentLoggedInUser?.role == "organizer" && (
+                <a href="/AllTasks" className="font-bold hover:text-slate-600 ">
+                  Tasks
                 </a>
               )}
             </li>
           </ul>
         </div>
 
+            <div className="max-w-md mx-auto">
+              <div
+                className={`relative p-0 flex items-center h-12 rounded-lg bg-transparent overflow-hidden ${
+                  isExpanded ? "w-full" : "w-10"
+                } md:w-full transition-all duration-300 ease-in-out`}
+              >
+              </div>
+            </div>
+            <div className="flex items-center relative">
+              <button
+                onClick={toggleUserDropdown}
+                className="bg-transparent text-white font-bold rounded  relative"
+              >
+                <svg fill="none" viewBox="0 0 15 15" height="1.5em" width="2em">
+                  <path
+                    fill="currentColor"
+                    d="M3 13v.5h1V13H3zm8 0v.5h1V13h-1zm-7 0v-.5H3v.5h1zm2.5-3h2V9h-2v1zm4.5 2.5v.5h1v-.5h-1zM8.5 10a2.5 2.5 0 012.5 2.5h1A3.5 3.5 0 008.5 9v1zM4 12.5A2.5 2.5 0 016.5 10V9A3.5 3.5 0 003 12.5h1zM7.5 3A2.5 2.5 0 005 5.5h1A1.5 1.5 0 017.5 4V3zM10 5.5A2.5 2.5 0 007.5 3v1A1.5 1.5 0 019 5.5h1zM7.5 8A2.5 2.5 0 0010 5.5H9A1.5 1.5 0 017.5 7v1zm0-1A1.5 1.5 0 016 5.5H5A2.5 2.5 0 007.5 8V7zm0 7A6.5 6.5 0 011 7.5H0A7.5 7.5 0 007.5 15v-1zM14 7.5A6.5 6.5 0 017.5 14v1A7.5 7.5 0 0015 7.5h-1zM7.5 1A6.5 6.5 0 0114 7.5h1A7.5 7.5 0 007.5 0v1zm0-1A7.5 7.5 0 000 7.5h1A6.5 6.5 0 017.5 1V0z"
+                  />
+                </svg>
+              </button>
 
-          <div className="flex items-center relative">
-            <button
-              onClick={toggleDropdown}
-              className="bg-transparent hover:bg-white hover:text-black text-white font-bold py-2 px-4 rounded-full border-2 border-white hidden md:block"
-            >
-              Login
-            </button>
-
-            {showDropdown == true && (
-              <>
-                <div
-                  className={`absolute top-16 right-0 bg-white rounded-lg shadow-lg p-2 z-20`}
-                >
-                  <button
-                    onClick={() => handleLoginSelection("Organizer")}
-                    className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 transition duration-200 rounded-md"
-                  >
-                    <span className="text-sm">Organizer</span>
-                  </button>
-                  <button
-                    onClick={() => handleLoginSelection("Editor")}
-                    className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 transition duration-200 rounded-md"
-                  >
-                    <span className="text-sm">Editor</span>
-                  </button>
+              {/* User dropdown */}
+              {showUserDropdown && (
+                <div className="absolute top-16 right-0 bg-white rounded-lg shadow-lg p-2 z-20">
+                <div className="flex items-center w-full px-4 py-2 text-gray-700">
+                  <span className="text-sm">{currentLoggedInUser.name}</span>
                 </div>
-              </>
-            )}
-            {showDropdownMobile == true && (
-              <>
-                <div
-                  id="login-popup"
-                  tabIndex="-1"
-                  className={`bg-black/50 fixed top-0 right-0 left-0 z-50 h-full flex items-center justify-center`}
+                <button
+                  onClick={handleProfileNavigation}
+                  className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 transition duration-200 rounded-md"
                 >
-                  <div className="relative p-4 w-full max-w-md h-full md:h-auto">
-                    <div className="relative bg-white rounded-lg shadow">
-                      <button
-                        type="button"
-                        onClick={toggleDropdownMobile}
-                        className="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          className="w-5 h-5"
-                          fill="#c6c7c7"
-                          viewBox="0 0 20 20"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clipRule="evenodd"
-                          ></path>
-                        </svg>
-                        <span className="sr-only">Close popup</span>
-                      </button>
-
-                      <div className="p-5">
-                        <div className="text-center">
-                          <p className="mb-3 text-2xl font-semibold leading-5 text-slate-900">
-                            Organizer
-                          </p>
-                        </div>
-
-                        <div className="text-center">
-                          <p className="mb-3 text-2xl font-semibold leading-5 text-slate-900">
-                            Editor
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        
+                  <span className="text-sm">Profile</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 transition duration-200 rounded-md"
+                >
+                  <span className="text-sm">Logout</span>
+                </button>
+              </div>
+              )}
+                
+    </div>
         {menuOpen && (
           <div
             className={`fixed top-0 right-0 h-full w-full bg-black bg-opacity-90 text-white shadow-lg md:hidden transform transition-transform duration-500 ease-in-out ${
@@ -308,7 +275,7 @@ const Header = ({ isScrolled }) => {
 
             <ul className="flex flex-col items-center justify-center h-full space-y-6">
               <li>
-                <a href="/" className="text-xl font-bold">
+                <a href="/OrgDashboard" className="text-xl font-bold">
                   Home
                 </a>
               </li>
@@ -326,31 +293,30 @@ const Header = ({ isScrolled }) => {
                 </a>
               </li>
               <li>
-                <a href="/FAQNonAuth" className="text-xl font-bold">
+                <a href="/auth/faq/editor" className="text-xl font-bold">
                   FAQ
                 </a>
               </li>
-                
-                  <li
-                    className="bg-transparent hover:bg-gray-700 text-white font-bold py-2 px-5 rounded border border-white"
-                    onClick={signUpBtn}
+              <li>
+                {currentLoggedInUser?.role == "organizer" && (
+                  <a
+                    href="/AllTasks"
+                    className="font-bold hover:text-slate-600 "
                   >
-                    Sign Up
-                  </li>
-                  <li
-                    className="bg-transparent hover:bg-gray-700 text-white font-bold py-2 px-6 rounded border border-white"
-                    onClick={toggleDropdown}
-                  >
-                    Log in
-                  </li>
+                    Tasks
+                  </a>
+                )}
+              </li>
+
+              {/* </ul> */}
+
               
             </ul>
           </div>
         )}
       </header>
-      <LoginPopup isOpen={showPopup} onClose={closePopup} userType={userType} />
     </>
   );
 };
 
-export default Header;
+export default HeaderOrg;
