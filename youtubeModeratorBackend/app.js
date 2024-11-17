@@ -5,6 +5,7 @@ const session = require("express-session");
 const cors = require("cors");
 const authRoutes= require('./routes/auth.route');
 const editorRoutes= require('./routes/EditorRoutes');
+const orgRoutes=require('./routes/OrgRoutes');
 require("./authentication/auth"); // Import the Google strategy
 
 const app = express();
@@ -48,4 +49,6 @@ app.use(authRoutes);
 //editor routed
 app.use(editorRoutes);
 
+//org routes
+app.use(orgRoutes);
 module.exports=app;

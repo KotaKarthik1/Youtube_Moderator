@@ -1,3 +1,7 @@
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+const crypto = require("crypto");
+
 const taskSchema = new Schema({
     taskName:{type:String,required:true},
     organizerId: { type: Schema.Types.ObjectId, ref: 'Org', required: true },  // Organizer who created the task

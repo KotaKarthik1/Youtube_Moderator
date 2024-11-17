@@ -16,9 +16,10 @@ exports.googleCallback = async (req, res) => {
   const profileImageUrl=profile?.photos[0]?.value;
 
   // Check if user already exists in the database
-  let user = await User.findOne({ email });
+  let user = await Org.findOne({ email });
   console.log("user found");
-  if(user!=null)
+  console.log("user is",user);
+  if(user===null)
   {
     console.log("inside user");
     // Create a new user with generated jwtSecretKey
@@ -32,17 +33,37 @@ exports.googleCallback = async (req, res) => {
       role: "organizer", // Assuming only organizers log in via Google
     });
     await newuser.save();
+    const userId = newUser ? newUser._id : user._id;
+  console.log(`User ObjectId: ${userId}`);
+  // Redirect to the frontend with the user's ID as a query parameter
+  res.redirect(`http://localhost:5173/orgDashboard?userId=${userId}`);
   }
+  const userId = user?._id;
+  console.log("user org details are ",user);
+  console.log(`User ObjectId: ${userId}`);
 
-  res.redirect("http://localhost:5173/orgDashboard"); // Redirect to the frontend
+  
+  // // Redirect to the frontend with the user's ID as a query parameter
+  res.redirect(`http://localhost:5173/orgDashboard?userId=${userId}`);
 };
 
 //Auth user
 exports.AuthenticateGoogle = async (req, res) => {
   if (req.isAuthenticated()) {
-    console.log(req.user);
+    // console.log(req);
+    // const {id}=req.body;
+    // console.log(id);
+    console.log("request user is ",req.user);
+    const usermail=req.user.emails[0].value;
+    console.log(usermail);
+    const userDetails = await Org.findOne({email:usermail});
+    console.log(userDetails);
+
     console.log("authenticated");
-    return res.json(req.user); // Send back the user info stored in the session
+    // const user = await Org.findOne({
+    //   _id:
+    // })
+    return res.json({data:userDetails}); // Send back the user info stored in the session
   } else {
     res.status(401).send("Unauthorized");
     console.log("not authorized");
@@ -105,3 +126,4 @@ exports.handleLogout = async (req, res) => {
 exports.handleTextChange = async (req, res) => {
   res.status(200).send("Authorised user");
 };
+console.log("Selected code portion is empty");

@@ -14,63 +14,67 @@ const imageController = require("./image.controller");
 const Org = require("../Models/OrganizerModel");
 const TaskModel = require("../Models/TasksModel");
 
-//editor API'S
+//org api's
 
-exports.handleImageupload=async(req,res)=>{
+
+// exports.handleYoutubeNameChange = async (req, res) => {
+//   try {
+//     console.log("handle youtube name change triggered");
+//     const { newText } = req.body;
+//     console.log(newText);
+//     console.log(req.body);
+//     const userId = req.user.id;
+//     console.log("this is user id", userId);
+//     const user = await Org.findOneAndUpdate(
+//       {
+//         _id: userId,
+//       },
+//       {
+//         $set: {
+//           youtubeChannelName: newText,
+//         },
+//       }
+//     );
+//     console.log(user);
+//     console.log("channel name updated updated");
+//     return res.status(200).json({ youtubeChannelName: newText });
+//   } catch (err) {
+//     console.log(err);
+//     return res.status(500).json({ error: err });
+//   }
+// };
+const mongoose = require("mongoose");
+
+exports.handleYoutubeNameChange = async (req, res) => {
   try {
-    console.log("file",req.file)
-
-    const userId = req.user.id; // Assuming the user ID is sent in the request body
-    console.log(userId);
-const file = req.file
-    const imageUrl = await imageController.uploadImageToS3(file.originalname,file, userId)
-    await User.findOneAndUpdate(
-      {
-        _id: userId,
-      },
-      {
-        $set: {
-          profileImageUrl: imageUrl,
-        },
-      }
-    );
-
-    // Update the user's profileImageUrl in the database
-    await User.findByIdAndUpdate(userId, { profileImageUrl:imageUrl });
-
-    // Send the S3 URL back to the frontend
-    console.log("response is sending to frontend");
-    res.status(200).json({ imageUrl});
-    
-  } catch (error) {
-    
-  }
-}
-
-
-exports.handleTextChange = async (req, res) => {
-  try {
-    console.log("handle text change triggered");
-    const { newText } = req.body;
+    console.log("handle youtube name change triggered");
+    const { newText,id } = req.body;
     console.log(newText);
     console.log(req.body);
-    const userId = req.user.id;
-    console.log("this is user id", userId);
-    const user = await User.findOneAndUpdate(
-      {
-        _id: userId,
-      },
-      {
-        $set: {
-          description: newText,
-        },
-      }
+
+    console.log("this is user id", id);
+
+    // Ensure `userId` is a valid ObjectId
+    // if (!mongoose.Types.ObjectId.isValid(id)) {
+    //   return res.status(400).json({ error: "Invalid user ID format" });
+    // }
+
+    const user = await Org.findOneAndUpdate(
+      { _id: id },
+      { $set: { youtubeChannelName: newText } },
+      { new: true } // Return the updated document
     );
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
     console.log(user);
-    console.log("description updated");
-    return res.status(200).json({ text: newText });
+    console.log("channel name updated");
+    return res.status(200).json({ youtubeChannelName: newText });
   } catch (err) {
-    return res.status(500).json({ error: err });
+    console.log(err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
@@ -119,9 +123,9 @@ exports.handleTotalTasksCount = async (req, res) => {
 exports.handleGetWorkingEditors = async (req, res) => {
     try {
       console.log("handling all organizer details");
-      const userId = req.user.id;
+      const userId = req.user;
   
-      // Fetch the current organizer (Editor)
+      // Fetch the curr.ent organizer (Editor)
       const CurrentOrg = await Org.findOne({ _id: userId });
       if (!CurrentOrg) {
         return res.status(404).json({ error: "Organizer not found" });

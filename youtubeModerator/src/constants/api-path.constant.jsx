@@ -30,6 +30,9 @@ const apiPathConstants = {
     handleTextChange:setBaseUrlPrefix("/EditorDescChange"),
     handleProfilePicUpload:setBaseUrlPrefix("/EditorProfileImageChange"),
     handleTaskCount:setBaseUrlPrefix("/EditorTotalTasksCount")
+  },
+  orgDashboard:{
+    handleYoutubeNameChange:setBaseUrlPrefix("/handleYoutubeNameChange")
   }
 };
 

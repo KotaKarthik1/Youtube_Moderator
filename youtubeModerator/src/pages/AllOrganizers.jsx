@@ -12,7 +12,7 @@ const AllOrganizers = () => {
   // Fetch organizers when the `searchQuery` changes
   const handleRequest = async (organizerId) => {
     try {
-      const response = await axios.post("/api/request-organizer", {
+      const response = await axios.post("http://localhost:4000/api/request-organizer", {
         organizerId,
       });
       if (response.status === 200) {

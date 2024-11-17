@@ -8,6 +8,7 @@ import editorApi from "../apis/editor.api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderEditor from "../Components/HeaderEditor";
+import orgApi from "../apis/org.api";
 export default function OrgProfile() {
   const [currentLoggedInUser, setCurrentLoggedInUser] = useRecoilState(currentUser);
   const [profileData, setProfileData] = useState({
@@ -16,6 +17,7 @@ export default function OrgProfile() {
     noOfEditors:0,
     youtubeChannelName:`${(currentLoggedInUser?.youtubeChannelName)?currentLoggedInUser?.youtubeChannelName:' No name'}`
   });
+  console.log("profile data is ",profileData);
 
   const [isEditing, setIsEditing] = useState(false);
   const [newText, setNewText] = useState(profileData.desc);
@@ -25,15 +27,15 @@ export default function OrgProfile() {
     {
       console.log("count triggered");
       // editorApi.handleTaskCount({
-      //   success:(res)=>{
-      //     setProfileData({ ...profileData, profilePic: response.data.imageUrl });
-      //     setProfileData((prevData) => ({ ...prevData, edits: res.data.count }));
-      //     console.log("response of count is ",res);
-      //   },
-      //   error:(err)=>{
-      //     console.log("Error updating profile picture",err);
-      //     // toast.error("Error fetching count of edits");
-      //   }
+        // success:(res)=>{
+        //   setProfileData({ ...profileData, profilePic: response.data.imageUrl });
+        //   setProfileData((prevData) => ({ ...prevData, edits: res.data.count }));
+        //   console.log("response of count is ",res);
+        // },
+        // error:(err)=>{
+        //   console.log("Error updating profile picture",err);
+        //   // toast.error("Error fetching count of edits");
+        // }
       // })
     }
     fetchNoOfEditors();
@@ -41,24 +43,20 @@ export default function OrgProfile() {
  
   // Update org youtubechannel name
   const handleTextChange = async () => {
-    editorApi.handleTextChange(
-      {
-        payload:{
-         newText
-        },
-        success:(res)=>{
-          setProfileData({ ...profileData, desc: newText });
-          setIsEditing(false);
-          console.log("done text change");
-          toast.success("Description updated successfully");
-        },
-        error:(err)=>{
-          console.error("Error updating profile text", error);
-          toast.error("Error Updating Description");
-        }
-      
-    }
-  )
+
+    orgApi.handleYoutubeNameChange({
+      payload:{newText,id:currentLoggedInUser?._id},
+      success:(res)=>{
+        console.log("response of handleyoutubeNameChange is ",res);
+        setProfileData((prevData) => ({ ...prevData, youtubeChannelName: newText }))
+        setIsEditing(false);
+      },
+      error:(err)=>{
+        console.log("Error updating youtube name picture",err);
+        toast.error("Error updating youtube name");
+      }
+
+    })
   };
 
   return (

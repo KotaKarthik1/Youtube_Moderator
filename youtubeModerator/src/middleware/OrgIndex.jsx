@@ -13,24 +13,26 @@ export default function ProtectedOrgRouter() {
     useRecoilState(currentUserState);
 
     const checkOrgState = () => {
+      console.log(currentLoggedInUser?._id);
        authApi.checkOrgStatus({
         success:(res)=>{
-        //   console.log("role is ",res.data.user?.role);
+          console.log(res);
         
-        const data=res?.data;
+        const data=res?.data?.data;
+        console.log("data is",data);
             setCurrentLoggedInUser({
               isLoggedIn:true,
-              organizerRequestStatus:data?.organizerRequestStatus,
+              organizerRequestStatus:'',
               _id:data?._id,
-              name:`${data?.name?.familyName} ${data?.name?.givenName}`,
+              name:data?.name,
               email:data?.email,
-              password: data?.password,
-              desc:data?.desc,
-              profileImg:data?.photos[0]?.value,
+              password: "",
+              desc:"",
+              profileImg:data?.profileImageUrl,
               role: "organizer",
               editorIds: data?.editorIds,
               organizer:'',
-              assignedTasks: data?.assignedTasks,
+              assignedTasks: "",
               pendingEditors: data?.pendingEditors,
             })
 
@@ -41,7 +43,7 @@ export default function ProtectedOrgRouter() {
         },
         error:(err)=>{
           setCurrentLoggedInUser(null);
-          
+          console.log(err);
           navigate("/");
         },final: () => {
           setIsLoaded(true);
