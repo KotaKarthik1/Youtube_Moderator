@@ -1,57 +1,66 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Footer from "../Components/Footer";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AllOrganizers = () => {
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [organizers, setOrganizers] = useState([]); // State for organizer data
   const [loading, setLoading] = useState(false); // State for loading indicator
   const [message, setMessage] = useState("");
-  const [requestedOrganizers, setRequestedOrganizers] = useState([]);
 
-  // Fetch organizers when the `searchQuery` changes
-  const handleRequest = async (organizerId) => {
+  // Fetch organizers
+  const fetchOrganizers = async () => {
     try {
-      const response = await axios.post("http://localhost:4000/api/request-organizer", {
-        organizerId,
+      setLoading(true);
+      const response = await axios.get(`http://localhost:4000/AllOrganizers`, {
+        params: { search: searchQuery },
+        withCredentials: true,
       });
-      if (response.status === 200) {
-        alert("Request sent successfully!");
-        // Update the state to include the requested organizer ID
-        setRequestedOrganizers((prev) => [...prev, organizerId]);
+      if (response.data.message === "Working with another Organizer") {
+        setMessage("working");
+      } else {
+        setOrganizers(response.data.organizers);
+        setMessage("");
       }
     } catch (error) {
-      console.error("Error sending request:", error);
-      alert("Failed to send request. Please try again.");
+      console.error("Error fetching organizers:", error);
+      setOrganizers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Request organizer
+  const handleRequest = async (organizerId) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:4000/editor/requestOrganizer",
+        { organizerId },
+        { withCredentials: true }
+      );
+      if (response.status === 200) {
+        toast.success("Request Sent", {
+          position: "top-center",
+          autoClose: 2000,
+        });
+        await fetchOrganizers(); // Refresh organizers after request
+      }
+    } catch (err) {
+      if (err.response?.status === 400) {
+        toast.error(err.response.data.message, {
+          position: "top-center",
+          autoClose: 2000,
+        });
+      } else {
+        console.error("Error sending request:", err);
+        alert("Failed to send request. Please try again.");
+      }
     }
   };
 
   useEffect(() => {
-    const fetchOrganizers = async () => {
-      try {
-        setLoading(true);
-
-        console.log("searchquery",searchQuery);
-        const response = await axios.get(
-          `http://localhost:4000/AllOrganizers`,
-          {
-            params: { search: searchQuery }, // Send search query as a parameter
-            withCredentials: true,
-          }
-        );
-        if (response.data.message == "Working with other Organizer") {
-          setMessage("working");
-        } else {
-          console.log(response);
-          setOrganizers(response.data.organizers); // Update state with API response
-        }
-      } catch (error) {
-        console.error("Error fetching organizers:", error);
-        setOrganizers([]); // Clear organizers if there's an error
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOrganizers();
   }, [searchQuery]);
 
@@ -83,7 +92,7 @@ const AllOrganizers = () => {
             id="search"
             placeholder="Search organizers..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)} // Update `searchQuery` state
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
@@ -102,17 +111,15 @@ const AllOrganizers = () => {
         {/* Content Based on Loading or Data */}
         {loading ? (
           <div className="text-center">Loading...</div>
-        ) : message == "working" ? (
-          <>
-            <div className="text-center">
-              You are already working under another organizer.
-            </div>
-          </>
-        ) : organizers.length > 0 ? (
+        ) : message === "working" ? (
+          <div className="text-center">
+            You are already working under another organizer.
+          </div>
+        ) : organizers?.length > 0 ? (
           <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3">
             {organizers.map((organizer) => (
               <div
-                key={organizer.id}
+                key={organizer._id}
                 className="relative overflow-hidden rounded-lg border bg-background p-2"
               >
                 <div className="flex h-[90px] flex-col justify-between items-center rounded-md p-6">
@@ -120,24 +127,21 @@ const AllOrganizers = () => {
                   <div className="space-y-2 text-center">
                     <h3 className="font-bold">{organizer.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Youtube Account Name: {organizer.youtubeAccountName}
+                      Youtube Account Name: {organizer.youtubeChannelName}
                     </p>
                   </div>
                 </div>
                 <button
-            className={`mt-4 w-full rounded-lg px-4 py-2 transition-colors ${
-              requestedOrganizers.includes(organizer.id)
-                ? "bg-green-500 text-white cursor-not-allowed"
-                : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-            onClick={() =>
-              !requestedOrganizers.includes(organizer.id) &&
-              handleRequest(organizer.id)
-            }
-            disabled={requestedOrganizers.includes(organizer.id)}
-          >
-            {requestedOrganizers.includes(organizer.id) ? "Requested" : "Request"}
-          </button>
+                  className={`mt-4 w-full rounded-lg px-4 py-2 transition-colors ${
+                    organizer.orgStatus
+                      ? "bg-green-500 text-white cursor-not-allowed"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
+                  }`}
+                  disabled={organizer.orgStatus} // Disable button if already requested
+                  onClick={() => handleRequest(organizer._id)}
+                >
+                  {organizer.orgStatus ? "Requested" : "Request"}
+                </button>
               </div>
             ))}
           </div>

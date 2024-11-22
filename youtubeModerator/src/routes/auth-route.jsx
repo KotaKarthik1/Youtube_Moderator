@@ -14,10 +14,8 @@ const navigationRoutes = [
     {name:"EditorServices",path:"/auth/features/editor",element:<><HeaderEditor isScrolled={60}/><Services/></>},
     {name:"EditorContact",path:"/auth/contact/editor",element:<><HeaderEditor isScrolled={60}/><ContactUs/></>},
     {name:"EditorFAQ",path:"/auth/faq/editor",element:<><HeaderEditor isScrolled={60}/><FAQ/></>},
-    {name:"EditorTask",path:"/EditorTaskView",element:<EditorTask/>},
+    {name:"EditorTask",path:"/EditorTaskView",element:<><HeaderEditor isScrolled={60}/><EditorTask/></>},
     {name:"AllOrganizers",path:"/AllOrgnizers",element:<><HeaderEditor isScrolled={60}/><AllOrganizers/></>},
-    
-
 ];
 
 export default navigationRoutes;

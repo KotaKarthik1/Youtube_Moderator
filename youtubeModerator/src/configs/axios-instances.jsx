@@ -2,12 +2,12 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   withCredentials: true,
-  baseURL: "http://localhost:8000/api",
+  baseURL: "http://localhost:4000/",
 });
 
 const getRequest = (data) => {
-  const { path, config, success, error, final } = data;
-  axiosInstance.get(path, config).then(success).catch(error).finally(final);
+  const { path, payload,config, success, error, final } = data;
+  axiosInstance.get(path,payload, config).then(success).catch(error).finally(final);
 };
 
 const postRequest = (data) => {

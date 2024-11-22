@@ -31,7 +31,7 @@ export default function OrganizerDashboard() {
 
 
   const handleCreateTask=()=>{
-
+    navigate("/createTask");
   }
 
   const handleOrgLogout = () => {

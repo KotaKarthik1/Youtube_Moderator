@@ -36,3 +36,22 @@ exports.removeImageFromS3 = async (fileName) => {
         return false; 
     }
 };
+
+//upload video to s3
+exports.uploadVideoToS3 = async (fileName, file, taskId) => {
+    try {
+        const uploadParams = {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Body: file.buffer,
+            Key: `videos/${taskId}-${Date.now()}-${fileName}`,
+            ContentType: file.mimetype,
+            ACL: 'public-read'
+        };
+
+        const result = await s3Client.upload(uploadParams).promise();
+        return result.Location; // Return the S3 URL
+    } catch (error) {
+        console.error("Error uploading video to S3:", error);
+        return null;
+    }
+};

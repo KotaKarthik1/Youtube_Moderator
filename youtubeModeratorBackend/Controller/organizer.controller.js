@@ -9,13 +9,16 @@ const HttpStatusCode = require("../constants/http-code.constant");
 const ResponseMessageConstant = require("../constants/response-message.constant");
 const CommonConstant = require("../constants/common.constant");
 const ErrorLogConstant = require("../constants/error-log.constant");
-
+const sendEmail = require("../config/nodemailer");
 const imageController = require("./image.controller");
 const Org = require("../Models/OrganizerModel");
 const TaskModel = require("../Models/TasksModel");
+const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
 
 //org api's
-
 
 // exports.handleYoutubeNameChange = async (req, res) => {
 //   try {
@@ -48,7 +51,7 @@ const mongoose = require("mongoose");
 exports.handleYoutubeNameChange = async (req, res) => {
   try {
     console.log("handle youtube name change triggered");
-    const { newText,id } = req.body;
+    const { newText, id } = req.body;
     console.log(newText);
     console.log(req.body);
 
@@ -121,44 +124,707 @@ exports.handleTotalTasksCount = async (req, res) => {
 //   }
 // };
 exports.handleGetWorkingEditors = async (req, res) => {
-    try {
-      console.log("handling all organizer details");
-      const userId = req.user;
-  
-      // Fetch the curr.ent organizer (Editor)
-      const CurrentOrg = await Org.findOne({ _id: userId });
-      if (!CurrentOrg) {
-        return res.status(404).json({ error: "Organizer not found" });
-      }
-  
-      const editorDetails = await Promise.all(
-        CurrentOrg.editorIds.map(async (editorId) => {
-          // Fetch editor details
-          const editor = await User.findOne({ _id: editorId });
-          if (!editor || !editor.assignedTasks) {
-            return null; // Skip if editor or tasks are missing
-          }
-  
-          // Count tasks assigned to this organizer
-          let taskCount = 0;
-          for (const taskId of editor.assignedTasks) {
-            const currentTask = await TaskModel.findOne({ _id: taskId });
-            if (currentTask && currentTask.organizerId == userId) {
-              taskCount++;
-            }
-          }
-  
-          return { name: editor.name, taskCount };
-        })
-      );
-  
-      // Filter out null entries (in case of skipped editors)
-      const filteredEditorDetails = editorDetails.filter((detail) => detail !== null);
-  
-      return res.status(200).json({ editorDetails: filteredEditorDetails });
-    } catch (err) {
-      console.error("Error fetching working organizers:", err);
-      return res.status(500).json({ error: err.message });
+  try {
+    console.log("handling all organizer details");
+    const userId = req.user;
+
+    // Fetch the curr.ent organizer (Editor)
+    const CurrentOrg = await Org.findOne({ _id: userId });
+    if (!CurrentOrg) {
+      return res.status(404).json({ error: "Organizer not found" });
     }
-  };
-  
+
+    const editorDetails = await Promise.all(
+      CurrentOrg.editorIds.map(async (editorId) => {
+        // Fetch editor details
+        const editor = await User.findOne({ _id: editorId });
+        if (!editor || !editor.assignedTasks) {
+          return null; // Skip if editor or tasks are missing
+        }
+
+        // Count tasks assigned to this organizer
+        let taskCount = 0;
+        for (const taskId of editor.assignedTasks) {
+          const currentTask = await TaskModel.findOne({ _id: taskId });
+          if (currentTask && currentTask.organizerId == userId) {
+            taskCount++;
+          }
+        }
+
+        return { name: editor.name, taskCount };
+      })
+    );
+
+    // Filter out null entries (in case of skipped editors)
+    const filteredEditorDetails = editorDetails.filter(
+      (detail) => detail !== null
+    );
+
+    return res.status(200).json({ editorDetails: filteredEditorDetails });
+  } catch (err) {
+    console.error("Error fetching working organizers:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.handleGetAllEditorRequests = async (req, res) => {
+  try {
+    console.log("all requests controller triggered");
+
+    const { id } = req.body;
+    console.log(id, req.body);
+    const CurrentOrg = await Org.findOne({ _id: id });
+
+    if (CurrentOrg === null) {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+
+    // Get all pending editors for this organizer
+    const editorRequests = CurrentOrg.pendingEditors.map((request) => ({
+      editorId: request.editorId,
+      status: request.status,
+    }));
+
+    // Populate editor details if needed
+    const populatedEditorRequests = await Promise.all(
+      editorRequests.map(async (request) => {
+        const editor = await User.findById(request.editorId).select(
+          "name email description"
+        );
+        return {
+          ...request, // Include other fields from the request (like `status`)
+          ...editor._doc, // Spread the fields from the editor document directly
+        };
+      })
+    );
+
+    return res.status(200).json({ requests: populatedEditorRequests });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+//accpet editor to work
+// exports.handleAcceptEditor = async (req, res) => {
+//   try {
+//     const { id, editorId } = req.body;
+//     const CurrentOrg = await Org.findOne({ _id: id });
+//     if (CurrentOrg === null) {
+//       return res.status(404).json({ error: "Organizer not found" });
+//     }
+//     // Find the editor request
+//     const editorRequest = CurrentOrg.pendingEditors.find(
+//       (request) => request.editorId.toString() === editorId
+//       );
+//       if (editorRequest === null) {
+//         return res.status(404).json({ error: "Editor request not found" });
+//       }
+//       //remove the editor from the pending editor array in org
+
+//       //add that editor into the editorIds in the org
+
+//       //remove all the other requests made by the editor to other organizers ..make it empty in editor schema
+
+//       //fill the organizerId field with this org id in the editor schema
+
+//       // send a mail to the ediotrs mail saying this orgniazer accpeted your requesting and now working for them
+
+//       //
+
+//   } catch (err) {
+//     return res.status(500).json({ error: err.message });
+//   }
+// };
+exports.handleAcceptEditor = async (req, res) => {
+  try {
+    const { id, editorId } = req.body;
+
+    // Fetch the organizer by ID
+    const CurrentOrg = await Org.findById(id);
+    if (!CurrentOrg) {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+
+    // Find the editor request
+    const editorRequestIndex = CurrentOrg.pendingEditors.findIndex(
+      (request) => request.editorId.toString() === editorId
+    );
+    if (editorRequestIndex === -1) {
+      return res.status(404).json({ error: "Editor request not found" });
+    }
+
+    // Remove the editor request from the pending editors array
+    const [acceptedRequest] = CurrentOrg.pendingEditors.splice(
+      editorRequestIndex,
+      1
+    );
+
+    // Add the editor ID to the `editorIds` field
+    CurrentOrg.editorIds.push(editorId);
+    await CurrentOrg.save();
+
+    // Fetch the editor and update their fields
+    const editor = await User.findById(editorId);
+    if (!editor) {
+      return res.status(404).json({ error: "Editor not found" });
+    }
+
+    await sendEmail({
+      to: editor.email,
+      subject: "Request Accepted",
+      text: `Your request to work with ${CurrentOrg.name} has been accepted! Now you are working for ${CurrentOrg.name} organizer`,
+      html: `<p>Your request to work with <strong>${CurrentOrg.name}</strong> has been accepted! Now you are working for ${CurrentOrg.name}</p>`,
+    });
+
+    // Remove all other requests made by the editor
+    editor.organizerRequestStatus = [];
+
+    // Assign this organizer's ID to the editor
+    editor.organizerId = id;
+    await editor.save();
+    return res.status(200).json({
+      message: `Editor ${editor.name} has been successfully accepted to work for organizer ${CurrentOrg.name}.`,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+//handle reject the editor to work
+exports.handleRejectEditor = async (req, res) => {
+  try {
+    const { id, editorId } = req.body;
+    // Fetch the organizer by ID
+    const CurrentOrg = await Org.findById(id);
+    if (!CurrentOrg) {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+
+    // Find the editor request
+    const editorRequestIndex = CurrentOrg.pendingEditors.findIndex(
+      (request) => request.editorId.toString() === editorId
+    );
+    if (editorRequestIndex === -1) {
+      return res.status(404).json({ error: "Editor request not found" });
+    }
+
+    // Remove the editor request from the pending editors array
+    const [acceptedRequest] = CurrentOrg.pendingEditors.splice(
+      editorRequestIndex,
+      1
+    );
+    await CurrentOrg.save();
+    const editor = await User.findById(editorId);
+    if (!editor) {
+      return res.status(404).json({ error: "Editor not found" });
+    }
+    const orgRequestIndex = editor.organizerRequestStatus.findIndex(
+      (request) => request.organizerId.toString() === id
+    );
+    editor.organizerRequestStatus.splice(orgRequestIndex, 1);
+    await editor.save();
+    await sendEmail({
+      to: editor.email,
+      subject: "Request Rejected",
+      text: `Your request to work with ${CurrentOrg.name} has been rejected! `,
+      html: `<p>Your request to work with <strong>${CurrentOrg.name}</strong> has been rejected! Better luck next time</p>`,
+    });
+
+    return res.status(200).json({
+      message: `Editor ${editor.name} has been rejected to work for organizer ${CurrentOrg.name}.`,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.handleGetAllEditors = async (req, res) => {
+  try {
+    const { id } = req.body;
+    console.log(id);
+
+    // Find the organizer by ID
+    const CurrentOrg = await Org.findById(id);
+    if (!CurrentOrg) {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+
+    // Get editor IDs from the organizer
+    const editorIds = CurrentOrg.editorIds;
+    console.log(editorIds);
+
+    // Fetch editor details for each ID
+    const editors = await User.find(
+      { _id: { $in: editorIds } }, // Match all IDs in the editorIds array
+      { _id: 1, name: 1, description: 1, rating: 1, email: 1 } // Only select `id` and `name` fields
+    );
+
+    // Send the editor details to the frontend
+    return res.status(200).json({ editors });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+// exports.handleCreateTask=async(req,res)=>{
+//   try{
+//     const {id,taskname,selectedEditor,deadline,description}=req.body;
+
+//   }catch(err)
+//   {
+//     return res.status(500).json({ error: err.message });
+//   }
+// }
+exports.createTask = async (req, res) => {
+  try {
+    console.log(req.body);
+    console.log(req.files);
+    const { taskName, organizerId, editorId, taskDetails, deadline } = req.body;
+    console.log(req.body);
+    const videos = req.files; // Assume videos are sent as files in the request payload
+
+    if (!videos || videos.length === 0) {
+      return res.status(400).json({ error: "No videos provided" });
+    }
+
+    // Check if organizer exists
+    const organizer = await Org.findById(organizerId);
+    if (organizer === null) {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+    console.log("organizer found");
+
+    // Check if editor exists
+    const editor = await User.findById(editorId);
+    if (editor === null) {
+      return res.status(404).json({ error: "Editor not found" });
+    }
+    console.log("editor found");
+
+    // Upload videos to S3
+    const uploadedUrls = [];
+    for (const video of videos) {
+      const videoUrl = await imageController.uploadVideoToS3(
+        video.originalname,
+        video,
+        organizerId
+      );
+      if (videoUrl) {
+        uploadedUrls.push(videoUrl);
+      }
+    }
+
+    // Create a new task
+    const newTask = new TaskModel({
+      taskName,
+      organizerId,
+      editorId,
+      rawVideoUrl: uploadedUrls,
+      taskDetails,
+      taskStatus: "in_progress",
+      deadline: deadline || null,
+    });
+
+    await newTask.save();
+
+    // Update organizer's taskscreated
+    organizer.taskscreated.push({
+      taskid: newTask._id,
+      editorId,
+    });
+    await organizer.save();
+
+    // Update editor's assigned tasks
+    editor.assignedTasks.push(newTask._id);
+    await editor.save();
+
+    // Send email to the editor
+    await sendEmail({
+      to: editor.email,
+      subject: `New Task Assigned: ${taskName}`,
+      text: `Hello ${editor.name},\n\nYou have been assigned a new task by ${
+        organizer.name
+      }.\n\nTask Details:\n${taskDetails}\n\nYou can download the raw video files here:\n${uploadedUrls.join(
+        "\n"
+      )}\n\nDeadline: ${
+        deadline || "No deadline specified"
+      }\n\nBest regards,\n${organizer.name}`,
+      html: `<p>Hello ${editor.name},\n\nYou have been assigned a new task by ${
+        organizer.name
+      }.\n\nTask Details:\n${taskDetails}\n\nYou can download the raw video files here:\n${uploadedUrls.join(
+        "\n"
+      )}\n\nDeadline: ${
+        deadline || "No deadline specified"
+      }\n\nBest regards,\n${organizer.name}</p>`,
+    });
+    // Respond with success
+    return res.status(201).json({
+      message: "Task created successfully",
+      task: newTask,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.handleRemoveEditor = async (req, res) => {
+  try {
+    const { id, editorId } = req.body;
+    console.log(req.body);
+
+    // Validate IDs
+    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(editorId)) {
+      return res.status(400).json({ error: "Invalid ID(s) provided" });
+    }
+
+    // Fetch the organizer by ID
+    const organizer = await Org.findById(id);
+    if (!organizer) {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+    console.log("Organizer found:", organizer);
+
+    // Remove the editor from the organizer's editorIds array
+    const editors = organizer.editorIds;
+    const index = editors.findIndex((editor) => editor.equals(editorId));
+    if (index !== -1) {
+      editors.splice(index, 1);
+    }
+    await organizer.save();
+
+    // Fetch the editor by ID and update their organizerId
+    const editor = await User.findById(editorId);
+    if (!editor) {
+      return res.status(404).json({ error: "Editor not found" });
+    }
+    console.log("Editor found:", editor);
+
+    editor.organizerId = null; // Use null instead of an empty string
+    await editor.save();
+
+    return res.status(200).json({ message: "Editor removed successfully" });
+  } catch (err) {
+    console.error("Error in handleRemoveEditor:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+// exports.handleGetAllTasks = async(req,res)=>{
+//   try{
+//     const {id}=req.body();
+//     const orgId=id;
+
+
+//     //i want to return the tasks as active, pending, completed based on the  task status
+//     // if  task status is in progress and deadline not crossed then it is active
+//     // if task status is still in progress after the deadline is crossed then it is pending
+//     // if task status is completed then it is completed
+//     // i want  id,name,editor,deadline for every task in the response 
+
+//   }
+//   catch(err)
+//   {
+//     console.log(err);
+//     return res.status(500).json({ err: err.message });
+//   }
+// }
+exports.handleGetAllTasks = async (req, res) => {
+  try {
+    const { id } = req.body; // Organizer ID
+    const orgId = id;
+
+    // Validate orgId
+    if (!mongoose.isValidObjectId(orgId)) {
+      return res.status(400).json({ error: "Invalid Organizer ID" });
+    }
+
+    // Fetch all tasks for the organizer
+    const tasks = await TaskModel.find({ organizerId: orgId }).populate("editorId", "name");
+    console.log("tasks are",tasks);
+
+    if (!tasks.length) {
+      return res.status(404).json({ message: "No tasks found for this organizer" });
+    }
+
+    const now = new Date();
+    const categorizedTasks = {
+      Active: [],
+      Pending: [],
+      Completed: [],
+    };
+
+    // Categorize tasks
+    tasks.forEach((task) => {
+      const taskInfo = {
+        id: task._id,
+        name: task.taskName,
+        editor: task.editorId.name, // From the populated editorId
+        deadline: task.deadline,
+      };
+
+      if (task.taskStatus === "completed") {
+        categorizedTasks.Completed.push(taskInfo);
+      } else if (task.taskStatus === "in_progress") {
+        if (task.deadline && now > task.deadline) {
+          categorizedTasks.Pending.push(taskInfo);
+        } else {
+          categorizedTasks.Active.push(taskInfo);
+        }
+      }
+    });
+
+    return res.status(200).json(categorizedTasks);
+  } catch (err) {
+    console.error("Error in handleGetAllTasks:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.handleTaskViewDetail = async (req, res) => {
+  try {
+    const { taskId } = req.body;
+
+    // Find the task by ID and populate the editorId to fetch the editor's name
+    const taskdetails = await TaskModel.findById(taskId)
+      .populate('editorId', 'name') // Populate editor's name only
+      .select('taskName deadline taskStatus rawVideoUrl editedVideoUrls');
+
+    if (!taskdetails) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Format the response
+    const response = {
+      taskName: taskdetails.taskName,
+      editorName: taskdetails.editorId?.name || 'N/A', // If editorId is null
+      deadline: taskdetails.deadline,
+      taskStatus: taskdetails.taskStatus,
+      rawUrls: taskdetails.rawVideoUrl,
+      editedUrls: taskdetails.editedVideoUrls,
+    };
+
+    return res.status(200).json(response);
+  } catch (err) {
+    console.error('Error in handleTaskViewDetail:', err);
+    return res.status(500).json({ err: err.message });
+  }
+};
+
+exports.handleUpdateRawVidoes = async (req, res) => {
+  try {
+    console.log(req.body.taskId);
+    console.log(req);
+    const taskId=req.body.taskId;
+    const orgId=req.body.orgId;
+    const description=req.body.description;
+
+    const files = req.files;
+    console.log(files);
+
+    if (!taskId || !files || files.length === 0) {
+      return res.status(400).json({ error: "Task ID and files are required" });
+    }
+
+    // Upload videos to S3 and collect URLs
+    const uploadedUrls = [];
+    for (const file of files) {
+      const uploadedUrl = await imageController.uploadVideoToS3(file.originalname, file, taskId);
+      if (!uploadedUrl) {
+        return res.status(500).json({ error: "Failed to upload video to S3" });
+      }
+      uploadedUrls.push(uploadedUrl);
+    }
+
+    // Update the raw video URLs in the task document
+    const task = await TaskModel.findByIdAndUpdate(
+      taskId,
+      { $push: { rawVideoUrl: { $each: uploadedUrls } }, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    // Find the editor's details
+    const editor = await User.findById(task.editorId);
+    if (!editor) {
+      return res.status(404).json({ error: "Editor not found" });
+    }
+    const organizer=await Org.findById(task.organizerId);
+    if(organizer===null)
+    {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+
+    // Use the sendEmail utility to notify the editor
+    await sendEmail({
+      to: editor.email,
+      subject: `New Raw Videos Added: ${task.taskName}`,
+      text: `Hello ${editor.name},\n\nNew raw video files have been uploaded for the task "${
+        task.taskName
+      } by the organizer ${organizer.name} ".\n\nDescription: ${description}\n\nYou can download the raw video files here:\n${uploadedUrls.join(
+        "\n"
+      )}\n\nDeadline: ${
+        task.deadline ? task.deadline.toDateString() : "No deadline specified"
+      }\n\nBest regards,\nYour Team`,
+      html: `<p>Hello ${editor.name},</p>
+             <p>New raw video files have been uploaded for the task "<strong>${
+               task.taskName
+             }</strong>".</p>
+             <p><strong>Description:</strong> ${description}</p>
+             <p>You can download the raw video files here:</p>
+             <ul>${uploadedUrls.map((url) => `<li><a href="${url}">${url}</a></li>`).join("")}</ul>
+             <p><strong>Deadline:</strong> ${
+               task.deadline ? task.deadline.toDateString() : "No deadline specified"
+             }</p>
+             <p>Best regards,<br/>Your Team</p>`,
+    });
+
+    return res.status(200).json({
+      message: "Videos uploaded and editor notified",
+      uploadedUrls,
+    });
+  } catch (err) {
+    console.error("Error in handleUpdateRawVidoes:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.handleTaskStatusChange = async (req,res)=>{
+  try{
+
+    const id = req.body.id; // Organizer ID
+
+    const taskId=req.body.taskId;
+    const newStatus = req.body.newStatus;
+
+    const taskdetail = await TaskModel.findById(taskId);
+    if(taskdetail.taskStatus === newStatus)
+    {
+      return res.status(200).json({
+        message: `Already in the ${newStatus}`,
+      });
+    }
+    taskdetail.taskStatus=newStatus;
+    await taskdetail.save();
+    return res.status(200).json({
+      message: `Status changed to ${newStatus}`,
+    });
+  }
+  catch(err)
+  {
+    console.error("Error status change", err);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+
+// Handle YouTube video upload
+exports.handleYoutubeUpload = async (req, res) => {
+  try {
+    // Extract the necessary details from the request body
+    const { videoUrl, title, description, taskId,videoId } = req.body;
+    const googleId=req.user.id;
+    const { accessToken } = req.user;  // Assuming access token is stored in req.user
+    
+    // Create the OAuth2 client with the user's access token
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'http://localhost:4000/auth/google/callback'
+    );
+    oauth2Client.setCredentials({ access_token: accessToken });
+
+    // Initialize the YouTube API client
+    const youtube = google.youtube({
+      version: 'v3',
+      auth: oauth2Client
+    });
+
+    // Set up video metadata
+    const videoMetadata = {
+      snippet: {
+        title: title,
+        description: description,
+        tags: ['video', 'upload'],  // You can add more tags if needed
+      },
+      status: {
+        privacyStatus: 'private', // Can be 'public', 'private', or 'unlisted'
+      },
+    };
+
+    
+    // Fetch video from S3
+    const s3response = await axios({
+      method: 'get',
+      url: videoUrl,
+      responseType: 'stream', // Stream the video content
+    });
+    
+    console.log(s3response.data);
+
+
+    // Upload the video
+    const response = await youtube.videos.insert(
+      {
+        part: 'snippet,status',
+        requestBody: {
+          snippet: {
+            title: title,
+            description: description,
+            categoryId: '22', // Category ID for 'People & Blogs'; change as needed
+          },
+          status: {
+            privacyStatus: 'public', // Can be 'private', 'public', or 'unlisted'
+          },
+        },
+        media: {
+          body: s3response.data, // Streamed video data
+        },
+      },
+      {
+        // Options for upload progress
+        onUploadProgress: (event) => {
+          console.log(
+            `Uploaded ${((event.bytesRead / event.totalBytes) * 100).toFixed(2)}%`
+          );
+        },
+      }
+    );
+
+    const updatedTask = await TaskModel.findOneAndUpdate(
+      { 
+        _id: taskId,  // Find the task by taskId
+        'editedVideoUrls._id': videoId,  // Find the video in the editedVideoUrls array by videoId
+      },
+      {
+        $set: { 'editedVideoUrls.$.uploadedToYoutube': true,// Set the uploadedToYoutube field to true
+        'editedVideoUrls.$.url': `https://www.youtube.com/watch?v=${response.data.id}`,
+        }
+      },
+      { 
+        new: true,  // Return the updated document
+      }
+    );
+    if (!updatedTask) {
+      throw new Error('Task or video not found');
+    }
+
+    
+    // Handle the response from the YouTube API
+    console.log('Video uploaded successfully:', response.data);
+    res.status(200).json({
+      message: 'Video uploaded successfully!',
+      videoId: response.data.id,  // The video ID returned by YouTube
+    });
+  } catch (err) {
+    console.error('Error uploading video', err);
+    res.status(500).json({ error: err.message });
+  }
+};

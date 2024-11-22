@@ -1,15 +1,37 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import orgApi from "../apis/org.api";
+import currentUser from "../store/user.store";
+import { useRecoilState } from "recoil";
 
 export default function OrgAllTasks() {
     const [selectedTab, setSelectedTab] = useState("Active");
+    const [data,setData]=useState([]);
+    const [currentLoggedInUser, setCurrentLoggedInUser] = useRecoilState(currentUser);
 
     // Dummy data for each tab
-    const data = {
-        Active: [{id:12,name:"Active Task 1",orgname:'org3'}, {id:1,name:"Active Task 2",orgname:'org2'}, {id:4,name:"Active Task 3",orgname:'org1'}],
-        Pending: [{id:11,name:"Pending Task 1",orgname:'org1'}, {id:2,name:"Pending Task 2",orgname:'org2'}],
-        Completed: [{id:9,name:"Completed Task 1",orgname:'org3'}],
-    };
+    // const data = {
+    //     Active: [{id:12,name:"Active Task 1",orgname:'org3'}, {id:1,name:"Active Task 2",orgname:'org2'}, {id:4,name:"Active Task 3",orgname:'org1'}],
+    //     Pending: [{id:11,name:"Pending Task 1",orgname:'org1'}, {id:2,name:"Pending Task 2",orgname:'org2'}],
+    //     Completed: [{id:9,name:"Completed Task 1",orgname:'org3'}],
+    // };
+    const fetchdata = ()=>{
+        orgApi.handleGetAllTasks({
+            payload:{id:currentLoggedInUser?._id},
+            success:(res)=>{
+                console.log(res.data);
+                setData(res.data);
+            },
+            error:(err)=>{
+                console.log(err);
+            }
+        })
+    }
+    useEffect(()=>{
+        fetchdata();
+        console.log("data is ",data);
+    },[])
+
 
     return (
         <div>
@@ -49,20 +71,27 @@ export default function OrgAllTasks() {
             </ul>
 
             {/* Tab content */}
-            <div className="mt-4">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                    {selectedTab} Tasks
-                </h2>
-                <ul className="mt-2 text-gray-700 dark:text-gray-300">
-                    {data[selectedTab].map((item, id) => (
-                        <li key={id} className="py-1">
-                            <Link to={`/EditorTaskView?taskId=${item.id}`}>
-                            {item.name}{' '}{item.orgname}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+            <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+    {selectedTab} Tasks
+  </h2>
+  <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+    {data[selectedTab]?.map((item, id) => (
+      <li key={id} className="py-3 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md px-2">
+        <Link 
+          to={`/OrgTaskView?taskId=${item.id}`} 
+          className="text-base text-gray-800 dark:text-gray-200 font-medium hover:text-blue-500 dark:hover:text-blue-400"
+        >
+          {item.name}
+        </Link>
+        <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+          {item.editor}
+        </span>
+      </li>
+    ))}
+  </ul>
+</div>
+
         </div>
     );
 }

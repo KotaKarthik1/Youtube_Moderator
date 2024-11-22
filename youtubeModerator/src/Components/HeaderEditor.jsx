@@ -86,6 +86,7 @@ const HeaderEditor = ({ isScrolled }) => {
   const handleProfileNavigation = () => {
     if (currentLoggedInUser?.role == "editor") {
       navigate("/auth/profile/editor");
+      setShowUserDropdown(false);
     } else if (currentLoggedInUser?.role == "organizer") {
       navigate("/auth/profile/org");
     } else {

@@ -16,6 +16,7 @@ export default function ProtectedRouter() {
        authApi.checkUserStatus({
         success:(res)=>{
           console.log("role is ",res.data.user?.role);
+          console.log("response from index.js ",res.data.user);
   
          
             const data=res?.data?.user;
@@ -28,11 +29,11 @@ export default function ProtectedRouter() {
               name:data?.name,
               email:data?.email,
               password: data?.password,
-              profileImg:data?.profileImg,
+              profileImg:data?.profileImageUrl,
               desc:data?.description,
               role: data?.role,
               editorIds: data?.editorIds,
-              organizer:data?.organizer,
+              organizer:data?.organizerName,
               assignedTasks: data?.assignedTasks,
               pendingEditors: data?.pendingEditors,
             });

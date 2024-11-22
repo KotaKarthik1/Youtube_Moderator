@@ -15,8 +15,20 @@ const editorApi = {
   handleTaskCount:({payload,success,error})=>{
     const {editorDashboard:{handleTaskCount}}=apiPath;
     axios.getRequest({path:handleTaskCount,payload,success,error});
-  }
-
+  },
+  handleGetAllTasks:({payload,success,error})=>{
+    const {editorDashboard:{handleGetAllTasks}}=apiPath;
+    axios.postRequest({path:handleGetAllTasks,payload,success,error});
+  },
+  handleGetTaskDetail:({payload,success,error})=>{
+    const {editorDashboard:{handleGetTaskDetail}}=apiPath;
+    axios.postRequest({path:handleGetTaskDetail,payload,success,error});
+  },
+  handleUpdateEditedVideos:({payload,success,error})=>{
+    const {editorDashboard:{handleUpdateEditedVideos}}=apiPath;
+    axios.postRequest({path:handleUpdateEditedVideos,payload,success,error});
+  },
+  
 };
 
 export default editorApi;

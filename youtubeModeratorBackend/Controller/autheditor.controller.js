@@ -36,6 +36,7 @@ exports.HandleEditorLogin = async (req, res) => {
         maxAge: 24 * 60 * 60 * 1000, // 1 day expiry
       });
       console.log("cookie attched");
+      console.log("generated cookie is ",generatedToken);
       // Send success status to frontend
       res.status(200).json({ message: "Login successful", id: user._id,username:user.name
        });

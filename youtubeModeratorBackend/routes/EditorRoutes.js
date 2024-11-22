@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
+    limits: { fileSize: 100 * 1024 * 1024 }, 
   });
   
   
@@ -22,8 +22,15 @@ router.post('/EditorDescChange',verifyEditor ,editorController.handleTextChange)
 router.get('/EditorTotalTasksCount',verifyEditor,editorController.handleTotalTasksCount);
 router.post("/EditorProfileImageChange", verifyEditor,upload.single("profilePic"), editorController.handleImageupload);
 
+//organizers page
 router.get('/AllOrganizers',verifyEditor,editorController.handleGetAllOrganizers);
-  
+router.post('/editor/requestOrganizer',verifyEditor,editorController.handleRequestToOrg);
+
+//tasks
+router.post('/handleGetAllTasksEditor',verifyEditor,editorController.handleGetAllTasks);
+router.post('/handleGetTaskDetail',verifyEditor,editorController.handleGetTaskDetail);
+router.post('/handleUpdateEditedVideos',verifyEditor,upload.array('videos'),editorController.handleUpdateEditedVideos);
+
 
 
 module.exports = router;

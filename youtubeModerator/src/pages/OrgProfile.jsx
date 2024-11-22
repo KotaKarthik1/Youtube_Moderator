@@ -9,36 +9,67 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderEditor from "../Components/HeaderEditor";
 import orgApi from "../apis/org.api";
+import { FiChevronDown, FiX } from "react-icons/fi";
 export default function OrgProfile() {
   const [currentLoggedInUser, setCurrentLoggedInUser] = useRecoilState(currentUser);
   const [profileData, setProfileData] = useState({
     profilePic: currentLoggedInUser?.profileImg,
     name: currentLoggedInUser?.name,
-    noOfEditors:0,
     youtubeChannelName:`${(currentLoggedInUser?.youtubeChannelName)?currentLoggedInUser?.youtubeChannelName:' No name'}`
   });
   console.log("profile data is ",profileData);
 
   const [isEditing, setIsEditing] = useState(false);
   const [newText, setNewText] = useState(profileData.desc);
+
+  const [activeIndex, setActiveIndex] = useState(null);
+
+  const [editorData,setEditorData] = useState([]);
+
+  const handleToggle = (index) => {
+    setActiveIndex(activeIndex === index ? null : index);
+  };
+
+  const handleRemove = (editorId) => {
+    orgApi.handleRemoveEditor({
+      payload:{
+        id:currentLoggedInUser?._id,
+        editorId
+      },
+      success:(res)=>
+      {
+        console.log("successfully removed",res.data);
+        toast.success("Editor Removed");
+        fetchEditors();
+      },
+      error:(err)=>
+      {
+        console.log("error occured",err);
+        toast.error("Error Removing Editor");
+        fetchEditors();
+      }
+
+    })
+  };
+
+  const fetchEditors = ()=>{
+    orgApi.handleGetAllEditors({
+      payload:{
+        id:currentLoggedInUser?._id
+      },
+      success:(res)=>{
+        console.log("editors data is ",res);
+        setEditorData(res.data.editors);
+      },
+      error:(err)=>{
+        console.log("err is ",err);
+        setEditorData();
+      }
+    })
+  }
   useEffect(()=>
   {
-    async function fetchNoOfEditors()
-    {
-      console.log("count triggered");
-      // editorApi.handleTaskCount({
-        // success:(res)=>{
-        //   setProfileData({ ...profileData, profilePic: response.data.imageUrl });
-        //   setProfileData((prevData) => ({ ...prevData, edits: res.data.count }));
-        //   console.log("response of count is ",res);
-        // },
-        // error:(err)=>{
-        //   console.log("Error updating profile picture",err);
-        //   // toast.error("Error fetching count of edits");
-        // }
-      // })
-    }
-    fetchNoOfEditors();
+    fetchEditors();
   },[])
  
   // Update org youtubechannel name
@@ -115,34 +146,63 @@ export default function OrgProfile() {
                   Edit Text
                 </button>
               )}
-              <div id="info" className="flex flex-wrap justify-start items-center gap-4">
-                <a
-                  rel="noopener"
-                  target="_blank"
-                  // href="https://github.com/iam-aydin"
-                  className="bg-gray-800 rounded-lg p-5 w-64 flex items-center gap-2 text-white"
-                >
-                  <svg className="h-8 w-8 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="16" />
-                    <line x1="8" y1="12" x2="16" y2="12" />
-                  </svg>
-                  <span>No of editors: {profileData.noOfEditors}</span>
-                </a>
-                {/* <a rel="noopener" target="_blank" className="bg-gray-800 rounded-lg p-5 w-64 flex items-center gap-2 text-white">
-                  <span className="[&>svg]:h-7 [&>svg]:w-7 [&>svg]:fill-[#ff0000]">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                      <path d="M549.7 124.1c-6.3-23.7-24.8-42.3-48.3-48.6C458.8 64 288 64 288 64S117.2 64 74.6 75.5c-23.5 6.3-42 24.9-48.3 48.6-11.4 42.9-11.4 132.3-11.4 132.3s0 89.4 11.4 132.3c6.3 23.7 24.8 41.5 48.3 47.8C117.2 448 288 448 288 448s170.8 0 213.4-11.5c23.5-6.3 42-24.2 48.3-47.8 11.4-42.9 11.4-132.3 11.4-132.3s0-89.4-11.4-132.3zm-317.5 213.5V175.2l142.7 81.2-142.7 81.2z" />
-                    </svg>
-                  </span>
-                  <span>Organizer: {(profileData?.organizer)?(<span>{profileData.organizer}</span>):(<span>None</span>)}</span>
-                </a> */}
-              </div>
+              
             </div>
           </div>
         </div>
       </div>
       
+      <div className="max-w-3xl mx-auto p-4 space-y-4">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Editor List</h2>
+      {editorData?.map((editor, index) => (
+        <div
+          key={editor._id}
+          className="border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300"
+        >
+          <button
+            onClick={() => handleToggle(index)}
+            className="w-full text-left p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-lg"
+            aria-expanded={activeIndex === index}
+            aria-controls={`editor-content-${editor._id}`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <FiChevronDown
+                  className={`transform transition-transform duration-300 ${
+                    activeIndex === index ? "rotate-180" : ""
+                  }`}
+                />
+                <span className="font-medium text-gray-800">{editor.name}</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove(editor._id);
+                }}
+                className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+                aria-label={`Remove ${editor._id}`}
+              >
+                <FiX className="w-4 h-4" />
+              </button>
+            </div>
+          </button>
+          <div
+            id={`editor-content-${editor._id}`}
+            className={`overflow-hidden transition-all duration-300 ${
+              activeIndex === index ? "max-h-48 p-4" : "max-h-0"
+            }`}
+            role="region"
+            aria-labelledby={`editor-heading-${editor._id}`}
+          >
+            <div className="space-y-2 text-gray-600">
+              <p><span className="font-medium">Email:</span> {editor.email}</p>
+              <p><span className="font-medium">Description:</span> {editor.description}</p>
+              <p><span className="font-medium">Rating</span> {editor.rating}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
       <div className="mt-10">
       <Footer/></div>
     </>

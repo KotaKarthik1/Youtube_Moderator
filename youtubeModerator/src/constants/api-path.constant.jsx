@@ -29,10 +29,24 @@ const apiPathConstants = {
   editorDashboard:{
     handleTextChange:setBaseUrlPrefix("/EditorDescChange"),
     handleProfilePicUpload:setBaseUrlPrefix("/EditorProfileImageChange"),
-    handleTaskCount:setBaseUrlPrefix("/EditorTotalTasksCount")
+    handleTaskCount:setBaseUrlPrefix("/EditorTotalTasksCount"),
+    handleGetAllTasks:setBaseUrlPrefix("/handleGetAllTasksEditor"),
+    handleGetTaskDetail:setBaseUrlPrefix("/handleGetTaskDetail"),
+    handleUpdateEditedVideos:setBaseUrlPrefix('/handleUpdateEditedVideos'),
   },
   orgDashboard:{
-    handleYoutubeNameChange:setBaseUrlPrefix("/handleYoutubeNameChange")
+    handleYoutubeNameChange:setBaseUrlPrefix("/handleYoutubeNameChange"),
+    handleGetRequests:setBaseUrlPrefix("/handleGetAllRequestsOrg"),
+    handleAcceptRequest:setBaseUrlPrefix("/handleAcceptEditor"),
+    handleRejectRequest:setBaseUrlPrefix("/handleRejectEditor"),
+    handleGetAllEditors:setBaseUrlPrefix("/handleGetAllEditors"),
+    handleCreateTask:setBaseUrlPrefix('/handleCreateTask'),
+    handleRemoveEditor:setBaseUrlPrefix('/handleRemoveEditor'),
+    handleGetAllTasks:setBaseUrlPrefix('/handleGetAllTasks'),
+    handleTaskViewDetail:setBaseUrlPrefix('/handleTaskViewDetail'),
+    handleUpdateRawVidoes:setBaseUrlPrefix('/handleRawVideoUpdate'),
+    handleStatusChange:setBaseUrlPrefix('/handleStatusChangeForTask'),
+    handleYoutubeUpload:setBaseUrlPrefix('/handleYoutubeUpload')
   }
 };
 

@@ -33,10 +33,10 @@ exports.googleCallback = async (req, res) => {
       role: "organizer", // Assuming only organizers log in via Google
     });
     await newuser.save();
-    const userId = newUser ? newUser._id : user._id;
+    const userId = newuser ? newuser._id : user._id;
   console.log(`User ObjectId: ${userId}`);
   // Redirect to the frontend with the user's ID as a query parameter
-  res.redirect(`http://localhost:5173/orgDashboard?userId=${userId}`);
+  return res.redirect(`http://localhost:5173/orgDashboard?userId=${userId}`);
   }
   const userId = user?._id;
   console.log("user org details are ",user);
@@ -75,6 +75,7 @@ exports.AuthenticateUser = async (req, res) => {
     if (!req.headers.cookie) {
       return res.status(401).json({ error: "token not provided" });
     }
+    console.log("em rooo bidda");
     console.log(req.headers.cookie);
     const token = getTokenfromCookie(req.headers.cookie); // Fetch token from cookies
     console.log(token);
@@ -88,20 +89,39 @@ exports.AuthenticateUser = async (req, res) => {
     try {
       // Verify the token
       const decodedtoken = await verifyToken(token);
-      console.log(decodedtoken);
+      console.log("decoded token is ",decodedtoken);
       if (!decodedtoken) {
         console.log(" token verification failed");
         return res.status(401).json({ error: "Token verification failed" });
       }
 
-      const user = await User.findOne(decodedtoken.userId);
+      const user = await User.findOne({_id:decodedtoken?.id});
+      console.log("user in the auth is ",user);
       delete user.password;
+      if(user.organizerId!='')
+      {
+        const organizer = await Org.findById(user.organizerId);
+        console.log("insisde the if in auth for org name");
+        console.log("organizer is ",organizer);
+        let organizerName = null;
+        if (organizer) {
+          console.log("organizer found");
+          organizerName = organizer.name; // Add organizer's name to the user response
+        }
+        const responseUser = {
+          ...user.toObject(), // Convert the Mongoose document to a plain object
+          organizerName, // Add the organizerName field dynamically
+        };
+        req.user = decodedtoken;
+        return res.status(200).json({user:responseUser});
+      }
+      
       console.log("user id is ", user);
       req.user = decodedtoken; // Attach the decoded token payload to the request object
       console.log(" token verification successful");
       // next(); // Proceed to the next middleware or route handler
 
-      return res.status(200).json({user});
+      return res.status(200).json({user:user});
     } 
     catch (err) {
       return res.status(401).json({ error: "Invalid or expired token" });

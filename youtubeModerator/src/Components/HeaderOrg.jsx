@@ -201,6 +201,13 @@ const HeaderOrg = ({ isScrolled }) => {
                 </a>
               )}
             </li>
+            <li>
+            {currentLoggedInUser?.role == "organizer" && (
+                <a href="/OrgRequests" className="font-bold hover:text-slate-600 ">
+                  Requests
+                </a>
+              )}
+            </li>
           </ul>
         </div>
 

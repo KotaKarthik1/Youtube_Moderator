@@ -12,28 +12,7 @@ export default function EditorDashboard() {
   const [currentLoggedInUser, setCurrentLoggedInUser] =
     useRecoilState(currentUser);
   const navigate = useNavigate();
-
-  const handleLogoutEditor = () => {
-    authApi.handleEditorLogout({
-      success: (res) => {
-        console.log("Editor logged out");
-        setCurrentLoggedInUser(null);
-        toast.success("Editor logged out", {
-          position: "top-center",
-          autoClose: "2000",
-        });
-        navigate("/");
-      },
-      error: (err) => {
-        toast.error("Error in server", {
-          position: "top-center",
-          autoClose: "2000",
-        });
-      },
-    });
-  };
   
-
   return (
     <>
       <HeaderEditor isScrolled={50} />
